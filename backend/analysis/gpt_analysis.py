@@ -1,27 +1,27 @@
-import os
 import requests
-from dotenv import load_dotenv
+import streamlit as st
 
-load_dotenv()
-api_key = os.getenv("OPENROUTER_API_KEY")
-
-def analyze_email_with_ai(email_text):
+def analyze_email_with_ai(body):
     try:
-        response = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "openai/gpt-3.5-turbo",  # Or try "mistralai/mixtral-8x7b"
-                "messages": [
-                    {"role": "system", "content": "You are a cybersecurity assistant. Analyze emails for phishing."},
-                    {"role": "user", "content": email_text}
-                ]
-            }
-        )
-        result = response.json()
-        return result["choices"][0]["message"]["content"]
+        headers = {
+            "Authorization": f"Bearer {st.secrets['OPENROUTER_API_KEY']}",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "model": "openai/gpt-3.5-turbo",
+            "messages": [
+                {"role": "system", "content": "You are a cybersecurity assistant. Assess this email for phishing risk."},
+                {"role": "user", "content": body}
+            ]
+        }
+        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
+        res = response.json()
+
+        if "choices" in res and len(res["choices"]) > 0:
+            return res["choices"][0]["message"]["content"]
+        else:
+            return "⚠️ Error from AI: No choices returned in response."
+
     except Exception as e:
         return f"⚠️ Error from AI: {e}"
+
